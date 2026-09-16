@@ -1,627 +1,1434 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" data-theme="cyberpunk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trading Agent Pro | Live Trading Site Automation</title>
+  <title>Trading Agent Pro | AI Live Automation & Copilot Desk</title>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- TradingView Lightweight Charts -->
   <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked.js for AI Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            brand: '#2962ff',
-            bull: '#089981',
-            bear: '#f23645',
-            darkBg: '#131722',
-            cardBg: '#1e222d',
-            cardHover: '#2a2e39',
-            borderLine: '#2a2e39',
+            brand: 'var(--brand-color, #00f2fe)',
+            brandDark: 'var(--brand-dark, #4facfe)',
+            bull: '#10b981',
+            bear: '#ef4444',
+            darkBg: 'var(--bg-primary, #0b0e14)',
+            cardBg: 'var(--bg-card, #131924)',
+            cardHover: 'var(--bg-hover, #1a2233)',
+            borderLine: 'var(--border-line, #232d42)',
           }
         }
       }
     }
   </script>
+
   <style>
-    body { background-color: #131722; color: #d1d4dc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    :root[data-theme="cyberpunk"] {
+      --brand-color: #00f2fe;
+      --brand-dark: #4facfe;
+      --bg-primary: #07090e;
+      --bg-card: #0f141f;
+      --bg-hover: #182030;
+      --border-line: #222d42;
+      --text-main: #e2e8f0;
+    }
+    :root[data-theme="midnight"] {
+      --brand-color: #3b82f6;
+      --brand-dark: #1d4ed8;
+      --bg-primary: #0a0f1d;
+      --bg-card: #111827;
+      --bg-hover: #1f2937;
+      --border-line: #374151;
+      --text-main: #f3f4f6;
+    }
+    :root[data-theme="emerald"] {
+      --brand-color: #10b981;
+      --brand-dark: #059669;
+      --bg-primary: #040d0a;
+      --bg-card: #0a1813;
+      --bg-hover: #122820;
+      --border-line: #1c3d31;
+      --text-main: #ecfdf5;
+    }
+    :root[data-theme="light"] {
+      --brand-color: #2563eb;
+      --brand-dark: #1d4ed8;
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-hover: #f1f5f9;
+      --border-line: #e2e8f0;
+      --text-main: #0f172a;
+    }
+
+    body {
+      background-color: var(--bg-primary, #07090e);
+      color: var(--text-main, #e2e8f0);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #131722; }
-    ::-webkit-scrollbar-thumb { background: #2a2e39; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #363c4e; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-line); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .glow-brand { box-shadow: 0 0 15px rgba(0, 242, 254, 0.25); }
+    .glow-bull { box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+    .glow-bear { box-shadow: 0 0 12px rgba(239, 68, 68, 0.3); }
+
+    /* Markdown chat styles */
+    .prose-chat p { margin-bottom: 0.5rem; line-height: 1.5; }
+    .prose-chat ul { list-style-type: disc; margin-left: 1.25rem; margin-bottom: 0.5rem; }
+    .prose-chat strong { color: #38bdf8; font-weight: 600; }
+    .prose-chat h3 { font-size: 1rem; font-weight: 700; color: #f8fafc; margin-top: 0.5rem; margin-bottom: 0.25rem; }
   </style>
 </head>
+
 <body class="h-screen flex flex-col overflow-hidden select-none">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="h-14 bg-cardBg border-b border-borderLine px-4 flex items-center justify-between shrink-0">
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION BAR                                                        -->
+  <!-- ========================================================================= -->
+  <header class="h-16 bg-cardBg border-b border-borderLine px-4 flex items-center justify-between shrink-0 z-20">
+    
+    <!-- Branding & Release Badge -->
     <div class="flex items-center space-x-3">
       <div class="flex items-center space-x-2">
-        <span class="text-xl">🤖</span>
-        <span class="font-bold text-lg text-white tracking-wide">TRADING AGENT <span class="text-brand text-xs font-semibold px-2 py-0.5 rounded bg-brand/20 ml-1">PRO</span></span>
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg">
+          ⚡
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <span class="font-extrabold text-base tracking-wide text-white">TRADING AGENT</span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">PRO</span>
+          </div>
+          <p class="text-[10px] text-gray-400 font-mono">By MinoForge-Official &bull; <span id="nav-release-tag" class="text-cyan-400">v2.5.0-LTS</span></p>
+        </div>
       </div>
-      <span class="text-xs text-gray-500">|</span>
-      <span class="text-xs text-gray-400">Live Trading Site Automation Platform</span>
     </div>
 
-    <!-- Center Mode & Killswitch -->
-    <div class="flex items-center space-x-4">
-      <div class="flex items-center bg-darkBg px-3 py-1 rounded-full border border-borderLine space-x-2">
-        <span class="w-2.5 h-2.5 rounded-full" id="status-dot"></span>
-        <span class="text-xs font-medium" id="status-text">Connecting...</span>
-      </div>
-
-      <button id="btn-toggle-auto" onclick="toggleAutoTrading()" class="text-xs font-semibold px-3 py-1.5 rounded bg-cardHover border border-gray-700 hover:border-gray-500 transition">
-        Auto-Trading: <span id="auto-state-text" class="text-gray-400">OFF</span>
-      </button>
-
-      <button onclick="emergencyHalt()" class="text-xs font-bold px-3 py-1.5 rounded bg-bear/20 text-bear border border-bear/40 hover:bg-bear hover:text-white transition flex items-center space-x-1">
-        <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
-        <span>EMERGENCY HALT</span>
-      </button>
-    </div>
-
-    <!-- Right Controls -->
+    <!-- Center Mode Switcher (Autonomous vs Copilot Tips) -->
     <div class="flex items-center space-x-3">
-      <button onclick="openSettingsModal()" class="flex items-center space-x-1.5 text-xs bg-cardHover px-3 py-1.5 rounded hover:bg-brand transition text-white">
-        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-        <span>Exchange Setup</span>
+      <div class="bg-darkBg p-1 rounded-xl border border-borderLine flex items-center shadow-inner">
+        <!-- Autonomous Mode Button -->
+        <button id="mode-btn-autonomous" onclick="setTradingMode('autonomous')"
+          class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-150 text-gray-400 hover:text-white">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>FULL AUTONOMOUS (REAL TRADES)</span>
+        </button>
+
+        <!-- Copilot Tips Button -->
+        <button id="mode-btn-copilot" onclick="setTradingMode('copilot')"
+          class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-150 bg-brand text-black font-semibold shadow">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+          <span>COPILOT (TIPS ONLY)</span>
+        </button>
+      </div>
+
+      <!-- Emergency Panic Killswitch -->
+      <button onclick="triggerEmergencyHalt()"
+        class="flex items-center space-x-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition duration-150"
+        title="Immediately halts all trading and cancels open orders">
+        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">PANIC HALT</span>
+      </button>
+    </div>
+
+    <!-- Right User & Settings Controls -->
+    <div class="flex items-center space-x-3">
+      <!-- Active Exchange Badge -->
+      <div class="hidden lg:flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-darkBg border border-borderLine text-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="nav-exchange-badge" class="font-medium text-gray-300">Binance</span>
+        <span id="nav-testnet-badge" class="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300">Sandbox</span>
+      </div>
+
+      <!-- Quick Theme Switcher -->
+      <button onclick="cycleTheme()" class="p-2 rounded-lg bg-cardHover text-gray-300 hover:text-white border border-borderLine transition" title="Toggle Theme">
+        <i data-lucide="palette" class="w-4 h-4"></i>
+      </button>
+
+      <!-- User Profile / Auth Button -->
+      <button id="nav-user-btn" onclick="handleUserBtnClick()" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-cardHover border border-borderLine hover:border-cyan-500/50 transition">
+        <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-600 flex items-center justify-center text-[10px] font-bold text-black" id="nav-user-avatar">
+          ?
+        </div>
+        <span class="text-xs font-medium text-white max-w-[100px] truncate" id="nav-user-name">Sign In</span>
+      </button>
+
+      <!-- Settings Button (Gear) -->
+      <button onclick="openSettingsModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-semibold text-xs hover:bg-cyan-400 shadow-md transition">
+        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        <span>Settings</span>
       </button>
     </div>
   </header>
 
-  <!-- MAIN WORKSPACE -->
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE                                                            -->
+  <!-- ========================================================================= -->
   <div class="flex-1 flex overflow-hidden">
-    
-    <!-- LEFT SIDEBAR: WATCHLIST & SCANNER -->
-    <aside class="w-64 bg-cardBg border-r border-borderLine flex flex-col shrink-0">
-      <div class="p-3 border-b border-borderLine flex items-center justify-between">
-        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Market Watchlist</span>
-        <button onclick="runScan()" id="btn-scan" class="text-xs bg-brand hover:bg-blue-600 text-white font-medium px-2.5 py-1 rounded flex items-center space-x-1 transition">
-          <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-          <span>Scan Now</span>
+
+    <!-- LEFT / CENTER: AI TRADING INTELLIGENCE & CHAT HUB -->
+    <section class="flex-1 flex flex-col border-r border-borderLine bg-darkBg">
+      
+      <!-- Mode & Context Status Banner -->
+      <div id="mode-banner" class="px-4 py-2 border-b border-borderLine bg-cyan-950/30 flex items-center justify-between text-xs">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="bot" class="w-4 h-4 text-cyan-400"></i>
+          <span class="font-medium text-gray-200" id="mode-banner-text">
+            💡 <strong>Copilot Mode Active:</strong> Trading Agent Pro is ready to analyze assets and give real-time tips.
+          </span>
+        </div>
+        <div class="flex items-center space-x-3 text-[11px] text-gray-400">
+          <span class="flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Gemini 3.6 Flash Active</span>
+          </span>
+          <span>Risk Limit: <strong class="text-white" id="banner-risk-limit">1.0%</strong></span>
+        </div>
+      </div>
+
+      <!-- Chat Messages Container -->
+      <div id="chat-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Initial Welcome Message -->
+        <div class="flex items-start space-x-3 max-w-3xl">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0 font-bold text-sm">
+            🤖
+          </div>
+          <div class="flex-1 bg-cardBg border border-borderLine rounded-2xl rounded-tl-none p-4 shadow-sm prose-chat text-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-cyan-400 text-xs tracking-wider uppercase">Trading Agent Pro &bull; Institutional AI</span>
+              <span class="text-[10px] text-gray-500 font-mono">System Online</span>
+            </div>
+            <p>Welcome! I am your AI Trading Agent powered by <strong>Gemini 3.6 Flash</strong> and trained on institutional market mechanics.</p>
+            <p>I monitor <strong>Cryptocurrencies (Bitcoin, Ethereum, Solana)</strong>, <strong>Commodities (Gold, Silver, Oil)</strong>, and <strong>Equities</strong> with technical analysis (SMC, Order Blocks, Liquidity Sweeps, EMA, RSI).</p>
+            <ul class="text-xs text-gray-300">
+              <li><strong>Copilot Mode:</strong> Ask for real-time market outlooks, key support/resistance levels, or trade ideas.</li>
+              <li><strong>Autonomous Mode:</strong> Switch modes at the top to let me execute real orders directly on your connected exchange within your safety barriers.</li>
+            </ul>
+            <p class="text-xs text-gray-400 mt-2">Click any prompt chip below or type your inquiry to begin!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Prompt Chips -->
+      <div class="px-4 py-2 border-t border-borderLine bg-cardBg/60 flex items-center space-x-2 overflow-x-auto text-xs shrink-0">
+        <span class="text-gray-500 font-semibold text-[11px] uppercase tracking-wider shrink-0">Quick Prompts:</span>
+        <button onclick="sendQuickPrompt('Analyze Bitcoin (BTC/USDT) current trend and key levels.')"
+          class="px-2.5 py-1 rounded-full bg-cardHover border border-borderLine hover:border-amber-500/50 hover:text-amber-300 transition shrink-0 flex items-center space-x-1">
+          <span>🪙</span><span>Bitcoin (BTC)</span>
+        </button>
+        <button onclick="sendQuickPrompt('Analyze Gold (XAU/USD) safe haven demand and key technical setup.')"
+          class="px-2.5 py-1 rounded-full bg-cardHover border border-borderLine hover:border-yellow-500/50 hover:text-yellow-300 transition shrink-0 flex items-center space-x-1">
+          <span>🏅</span><span>Gold (XAU/USD)</span>
+        </button>
+        <button onclick="sendQuickPrompt('What is the best high-probability trade setup right now across my watchlist?')"
+          class="px-2.5 py-1 rounded-full bg-cardHover border border-borderLine hover:border-cyan-500/50 hover:text-cyan-300 transition shrink-0 flex items-center space-x-1">
+          <span>⚡</span><span>Best Trade Now</span>
+        </button>
+        <button onclick="sendQuickPrompt('Audit my active safety barriers and calculate safe position size for a $10,000 account.')"
+          class="px-2.5 py-1 rounded-full bg-cardHover border border-borderLine hover:border-emerald-500/50 hover:text-emerald-300 transition shrink-0 flex items-center space-x-1">
+          <span>🛡️</span><span>Safety Audit</span>
         </button>
       </div>
 
-      <!-- Watchlist items list -->
-      <div class="flex-1 overflow-y-auto p-2 space-y-1" id="watchlist-container">
-        <!-- Injected via JS -->
+      <!-- Chat Input Area -->
+      <div class="p-4 border-t border-borderLine bg-cardBg shrink-0">
+        <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center space-x-2">
+          <div class="relative flex-1">
+            <textarea id="chat-input" rows="1"
+              placeholder="Ask Trading Agent Pro anything about Bitcoin, Gold, strategy, or trade setups..."
+              class="w-full bg-darkBg border border-borderLine rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition resize-none leading-relaxed"
+              onkeydown="handleTextareaKeydown(event)"></textarea>
+          </div>
+          <button type="submit" id="btn-send-chat"
+            class="h-10 px-5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs flex items-center space-x-1.5 transition shadow-lg shrink-0">
+            <span>Send</span>
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: LIVE CHART & SAFETY CONTROL DESK -->
+    <aside class="w-[420px] xl:w-[480px] flex flex-col bg-cardBg shrink-0">
+      
+      <!-- Asset Selector & Chart Header -->
+      <div class="p-3 border-b border-borderLine flex items-center justify-between bg-darkBg/50">
+        <div class="flex items-center space-x-2 overflow-x-auto text-xs">
+          <button onclick="selectAsset('BTC-USD')" class="asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-cyan-400 border border-cyan-500/40" data-sym="BTC-USD">BTC</button>
+          <button onclick="selectAsset('GC=F')" class="asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-gray-400 hover:text-white" data-sym="GC=F">Gold</button>
+          <button onclick="selectAsset('ETH-USD')" class="asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-gray-400 hover:text-white" data-sym="ETH-USD">ETH</button>
+          <button onclick="selectAsset('SOL-USD')" class="asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-gray-400 hover:text-white" data-sym="SOL-USD">SOL</button>
+          <button onclick="selectAsset('NVDA')" class="asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-gray-400 hover:text-white" data-sym="NVDA">NVDA</button>
+        </div>
+        <span id="chart-live-price" class="text-sm font-mono font-bold text-white">$---.--</span>
       </div>
 
-      <!-- 1-Click Trade Ticket -->
-      <div class="p-3 border-t border-borderLine bg-darkBg/60">
-        <div class="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
-          <span>Quick Execution</span>
-          <span class="text-[10px] text-gray-500" id="ticket-ticker">BTC-USD</span>
+      <!-- Live Lightweight Chart Container -->
+      <div class="h-64 border-b border-borderLine relative" id="chart-container">
+        <!-- Chart renders here -->
+      </div>
+
+      <!-- Safety Barriers & Live Execution Desk -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- Safety Barriers Overview Card -->
+        <div class="p-3.5 rounded-xl bg-darkBg border border-borderLine space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-200 flex items-center space-x-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Safety Barriers Status</span>
+            </span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold">Active & Enforced</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2 rounded-lg bg-cardBg border border-borderLine">
+              <span class="text-[10px] text-gray-400 block">Risk Per Trade</span>
+              <span class="text-sm font-bold text-cyan-400" id="side-risk-val">1.0%</span>
+            </div>
+            <div class="p-2 rounded-lg bg-cardBg border border-borderLine">
+              <span class="text-[10px] text-gray-400 block">Max Drawdown Killswitch</span>
+              <span class="text-sm font-bold text-amber-400" id="side-drawdown-val">15.0%</span>
+            </div>
+            <div class="p-2 rounded-lg bg-cardBg border border-borderLine">
+              <span class="text-[10px] text-gray-400 block">Default Stop-Loss</span>
+              <span class="text-sm font-bold text-red-400" id="side-sl-val">2.0%</span>
+            </div>
+            <div class="p-2 rounded-lg bg-cardBg border border-borderLine">
+              <span class="text-[10px] text-gray-400 block">Default Take-Profit</span>
+              <span class="text-sm font-bold text-emerald-400" id="side-tp-val">4.0%</span>
+            </div>
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-          <button onclick="executeOrder('buy')" class="py-2 rounded font-bold text-xs bg-bull hover:bg-emerald-600 text-white transition flex items-center justify-center space-x-1">
-            <span>BUY</span>
-          </button>
-          <button onclick="executeOrder('sell')" class="py-2 rounded font-bold text-xs bg-bear hover:bg-rose-600 text-white transition flex items-center justify-center space-x-1">
-            <span>SELL</span>
-          </button>
+
+        <!-- 1-Click Execution Ticket (Gated by Safety & Confirmation) -->
+        <div class="p-3.5 rounded-xl bg-darkBg border border-borderLine space-y-3">
+          <span class="text-xs font-bold text-gray-200 block">⚡ Quick Execution Ticket</span>
+          
+          <div class="flex items-center space-x-2">
+            <input id="quick-trade-amount" type="number" step="any" placeholder="Amount (e.g. 0.05)"
+              class="flex-1 bg-cardBg border border-borderLine rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500" />
+            <select id="quick-trade-asset" class="bg-cardBg border border-borderLine rounded-lg px-2 py-1.5 text-xs text-white">
+              <option value="BTC-USD">BTC</option>
+              <option value="GC=F">Gold</option>
+              <option value="ETH-USD">ETH</option>
+              <option value="SOL-USD">SOL</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="executeQuickTrade('buy')" class="py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition flex items-center justify-center space-x-1 shadow">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+              <span>BUY / LONG</span>
+            </button>
+            <button onclick="executeQuickTrade('sell')" class="py-2 rounded-lg bg-red-500 hover:bg-red-400 text-white font-bold text-xs transition flex items-center justify-center space-x-1 shadow">
+              <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+              <span>SELL / SHORT</span>
+            </button>
+          </div>
         </div>
-        <div class="flex items-center justify-between text-[11px] text-gray-400">
-          <span>Risk Rule: 1.0%</span>
-          <span class="text-bull" id="ticket-price">$0.00</span>
+
+        <!-- System Activity & Execution Logs -->
+        <div class="space-y-1.5">
+          <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Execution Log</span>
+          <div id="system-logs-box" class="h-32 overflow-y-auto p-2.5 rounded-xl bg-darkBg border border-borderLine font-mono text-[11px] space-y-1 text-gray-300">
+            <!-- Logs injected here -->
+          </div>
         </div>
+
       </div>
     </aside>
 
-    <!-- CENTER: TRADINGVIEW CHART & RECOMMENDATION -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-darkBg">
-      <!-- Chart Controls Header -->
-      <div class="h-10 bg-cardBg/50 border-b border-borderLine px-4 flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <span class="font-bold text-white text-sm tracking-wider" id="active-symbol">BTC-USD</span>
-          <span class="text-sm font-semibold text-bull" id="active-price">Loading...</span>
-        </div>
-        <div class="flex items-center space-x-2 text-xs text-gray-400">
-          <span>Strategy: <strong class="text-white" id="active-strategy">Composite</strong></span>
-          <span>•</span>
-          <span id="signal-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-cardHover text-gray-300">HOLD</span>
-        </div>
-      </div>
-
-      <!-- TradingView Lightweight Chart Container -->
-      <div class="flex-1 relative" id="chart-wrapper">
-        <div id="tv-chart" class="w-full h-full"></div>
-      </div>
-
-      <!-- Bottom Thesis Banner -->
-      <div class="h-14 bg-cardBg border-t border-borderLine px-4 flex items-center justify-between text-xs">
-        <div class="flex items-center space-x-2 flex-1 mr-4 overflow-hidden">
-          <i data-lucide="brain" class="w-4 h-4 text-brand shrink-0"></i>
-          <span class="text-gray-400 truncate" id="signal-reason">Scanning market data...</span>
-        </div>
-        <div class="flex items-center space-x-4 shrink-0 font-mono text-[11px]">
-          <div>SL: <span class="text-bear font-semibold" id="sig-sl">-</span></div>
-          <div>TP: <span class="text-bull font-semibold" id="sig-tp">-</span></div>
-          <div>Conf: <span class="text-white font-semibold" id="sig-conf">0%</span></div>
-        </div>
-      </div>
-
-      <!-- BOTTOM TABS: POSITIONS, ORDERS, WEBHOOKS, LOGS -->
-      <div class="h-44 bg-cardBg border-t border-borderLine flex flex-col shrink-0">
-        <div class="h-8 bg-cardHover border-b border-borderLine px-3 flex items-center space-x-4 text-xs font-semibold">
-          <button onclick="switchBottomTab('positions')" id="tab-btn-positions" class="text-white border-b-2 border-brand pb-1">Open Positions (<span id="count-pos">0</span>)</button>
-          <button onclick="switchBottomTab('trades')" id="tab-btn-trades" class="text-gray-400 hover:text-white pb-1">Executed Orders</button>
-          <button onclick="switchBottomTab('webhook')" id="tab-btn-webhook" class="text-gray-400 hover:text-white pb-1">TradingView Webhook Bridge</button>
-          <button onclick="switchBottomTab('logs')" id="tab-btn-logs" class="text-gray-400 hover:text-white pb-1">System Feed</button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-2" id="bottom-content">
-          <!-- Table dynamically injected -->
-        </div>
-      </div>
-    </main>
-
-    <!-- RIGHT SIDEBAR: LIVE EXCHANGE WALLET & RISK STATS -->
-    <aside class="w-72 bg-cardBg border-l border-borderLine flex flex-col shrink-0 p-3 space-y-3 overflow-y-auto">
-      <!-- Balance Card -->
-      <div class="bg-darkBg p-3 rounded-lg border border-borderLine">
-        <div class="text-[11px] text-gray-400 uppercase font-semibold">Live Wallet Balance</div>
-        <div class="text-2xl font-bold text-white mt-1" id="val-equity">$10,000.00</div>
-        <div class="flex items-center justify-between mt-2 text-xs">
-          <span class="text-gray-400">Free Cash:</span>
-          <span class="text-white font-mono" id="val-cash">$10,000.00</span>
-        </div>
-        <div class="flex items-center justify-between mt-1 text-xs">
-          <span class="text-gray-400">Return:</span>
-          <span class="text-bull font-mono font-semibold" id="val-return">+0.00%</span>
-        </div>
-      </div>
-
-      <!-- Risk Management Safety Status -->
-      <div class="bg-darkBg p-3 rounded-lg border border-borderLine space-y-2">
-        <div class="text-[11px] text-gray-400 uppercase font-semibold flex items-center justify-between">
-          <span>Safety Barriers</span>
-          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-bull"></i>
-        </div>
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-gray-400">Risk Per Trade:</span>
-          <span class="text-white font-mono">1.0% Equity</span>
-        </div>
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-gray-400">Max Asset Allocation:</span>
-          <span class="text-white font-mono">20.0%</span>
-        </div>
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-gray-400">Kill-Switch Limit:</span>
-          <span class="text-bear font-mono">15.0% Drawdown</span>
-        </div>
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-gray-400">Current Drawdown:</span>
-          <span class="text-gray-300 font-mono" id="val-drawdown">0.00%</span>
-        </div>
-      </div>
-
-      <!-- Exchange Integration Info -->
-      <div class="bg-darkBg p-3 rounded-lg border border-borderLine">
-        <div class="text-[11px] text-gray-400 uppercase font-semibold">Active Exchange Site</div>
-        <div class="flex items-center space-x-2 mt-2">
-          <span class="w-2 h-2 rounded-full bg-bull"></span>
-          <span class="text-sm font-semibold text-white uppercase" id="conn-exchange">Binance Testnet</span>
-        </div>
-        <p class="text-[11px] text-gray-500 mt-1">Ready for real or testnet trade execution.</p>
-      </div>
-    </aside>
   </div>
 
-  <!-- SETTINGS / EXCHANGE SETUP MODAL -->
-  <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center z-50">
-    <div class="bg-cardBg border border-borderLine rounded-xl w-[520px] max-w-full p-5 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-borderLine pb-3">
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 1: AUTHENTICATION & ACCOUNT CREATION                                -->
+  <!-- ========================================================================= -->
+  <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md bg-cardBg border border-borderLine rounded-2xl p-6 shadow-2xl space-y-5">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-borderLine">
         <div class="flex items-center space-x-2">
-          <i data-lucide="sliders" class="w-5 h-5 text-brand"></i>
-          <h3 class="font-bold text-white text-base">Exchange & Automation Setup</h3>
+          <span class="text-xl">🔐</span>
+          <h2 class="text-base font-bold text-white" id="auth-modal-title">Create an Account</h2>
         </div>
-        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeAuthModal()" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
 
-      <div class="space-y-3 text-xs">
+      <!-- Error / Success Alert -->
+      <div id="auth-alert" class="hidden p-3 rounded-xl text-xs font-medium border"></div>
+
+      <!-- Auth Mode Toggle Tabs -->
+      <div class="flex rounded-xl bg-darkBg p-1 border border-borderLine text-xs font-semibold">
+        <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg bg-brand text-black font-bold transition">
+          Create Account
+        </button>
+        <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg text-gray-400 hover:text-white transition">
+          Sign In
+        </button>
+      </div>
+
+      <!-- Registration Form -->
+      <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-3.5">
         <div>
-          <label class="block text-gray-400 mb-1">Trading Execution Mode</label>
-          <select id="modal-mode" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white">
-            <option value="paper">Simulated Paper Trading (Virtual Account)</option>
-            <option value="live">Live Trading Site API Execution</option>
-            <option value="advisory">Advisory Only (Scan & Alerts)</option>
-          </select>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Full Name</label>
+          <input type="text" id="reg-name" required placeholder="Alex Vance"
+            class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Email Address</label>
+          <input type="email" id="reg-email" required placeholder="trader@example.com"
+            class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+          <span class="text-[10px] text-gray-500 mt-0.5 block">Used for account login. Each email can only be registered once.</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Password</label>
+          <input type="password" id="reg-password" required placeholder="••••••••••••"
+            oninput="handlePasswordInput(this.value)"
+            class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+          
+          <!-- Live Password Strength Meter -->
+          <div class="mt-2 space-y-1">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-gray-400">Password Strength:</span>
+              <span id="strength-label" class="font-bold text-gray-500">Empty</span>
+            </div>
+            <div class="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+              <div id="strength-bar" class="h-full w-0 bg-red-500 transition-all duration-300"></div>
+            </div>
+            <div class="flex flex-wrap gap-1 text-[9px] pt-1" id="strength-criteria">
+              <span class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400" id="crit-len">8+ Chars</span>
+              <span class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400" id="crit-upper">Uppercase</span>
+              <span class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400" id="crit-num">Number</span>
+              <span class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400" id="crit-sym">Symbol</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-gray-400 mb-1">Exchange Platform</label>
-            <select id="modal-exchange" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white">
-              <option value="binance">Binance</option>
+            <label class="block text-xs font-medium text-gray-300 mb-1">Trading Experience</label>
+            <select id="reg-exp" class="w-full bg-darkBg border border-borderLine rounded-lg px-2.5 py-2 text-xs text-white">
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate" selected>Intermediate</option>
+              <option value="Pro">Institutional Pro</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1">Preferred Site</label>
+            <select id="reg-site" class="w-full bg-darkBg border border-borderLine rounded-lg px-2.5 py-2 text-xs text-white">
+              <option value="binance" selected>Binance</option>
               <option value="bybit">Bybit</option>
               <option value="kraken">Kraken</option>
               <option value="kucoin">KuCoin</option>
-              <option value="alpaca">Alpaca (Stocks/Crypto)</option>
+              <option value="alpaca">Alpaca</option>
             </select>
           </div>
-          <div class="flex items-end pb-2">
-            <label class="flex items-center space-x-2 text-white cursor-pointer">
-              <input type="checkbox" id="modal-testnet" checked class="rounded bg-darkBg border-borderLine text-brand focus:ring-0">
-              <span>Use Testnet / Sandbox</span>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition shadow-lg">
+          Complete Registration & Launch Desk
+        </button>
+      </form>
+
+      <!-- Login Form -->
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-3.5 hidden">
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Email Address</label>
+          <input type="email" id="login-email" required placeholder="trader@example.com"
+            class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••••••"
+            class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition shadow-lg">
+          Sign In
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 2: COMPREHENSIVE SETTINGS SUITE (ALL MANDATORY TABS)                -->
+  <!-- ========================================================================= -->
+  <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-2xl bg-cardBg border border-borderLine rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <!-- Settings Header -->
+      <div class="px-6 py-4 border-b border-borderLine flex items-center justify-between bg-darkBg">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="sliders-horizontal" class="w-5 h-5 text-cyan-400"></i>
+          <div>
+            <h2 class="text-base font-bold text-white">Trading Agent Pro Settings</h2>
+            <p class="text-xs text-gray-400">Configure safety barriers, themes, broker API, assets, and profile.</p>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Settings Tabs -->
+      <div class="flex border-b border-borderLine bg-darkBg/60 px-6 overflow-x-auto text-xs font-semibold">
+        <button onclick="switchSettingsTab('safety')" class="set-tab py-3 px-3 border-b-2 border-cyan-400 text-cyan-400 transition" data-target="set-tab-safety">🛡️ Safety Barriers</button>
+        <button onclick="switchSettingsTab('exchange')" class="set-tab py-3 px-3 border-b-2 border-transparent text-gray-400 hover:text-white transition" data-target="set-tab-exchange">🌐 Trading Website</button>
+        <button onclick="switchSettingsTab('assets')" class="set-tab py-3 px-3 border-b-2 border-transparent text-gray-400 hover:text-white transition" data-target="set-tab-assets">🪙 Traded Assets</button>
+        <button onclick="switchSettingsTab('theme')" class="set-tab py-3 px-3 border-b-2 border-transparent text-gray-400 hover:text-white transition" data-target="set-tab-theme">🎨 App Theme</button>
+        <button onclick="switchSettingsTab('profile')" class="set-tab py-3 px-3 border-b-2 border-transparent text-gray-400 hover:text-white transition" data-target="set-tab-profile">👤 Profile & Info</button>
+        <button onclick="switchSettingsTab('release')" class="set-tab py-3 px-3 border-b-2 border-transparent text-gray-400 hover:text-white transition" data-target="set-tab-release">ℹ️ Release & .exe</button>
+      </div>
+
+      <!-- Settings Content Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        
+        <!-- TAB 1: SAFETY BARRIERS -->
+        <div id="set-tab-safety" class="settings-panel space-y-4">
+          <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+            <strong>Institutional Capital Protection:</strong> No trade can bypass these barriers, whether initiated manually or by the Autonomous AI Agent.
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Max Risk Per Trade (% of Equity)</label>
+              <input type="number" id="cfg-risk" step="0.1" min="0.1" max="10.0" value="1.0"
+                class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white" />
+              <span class="text-[10px] text-gray-500">Standard institutional rule: 1.0%</span>
+            </div>
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Emergency Drawdown Killswitch (%)</label>
+              <input type="number" id="cfg-drawdown" step="1.0" min="5.0" max="50.0" value="15.0"
+                class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white" />
+              <span class="text-[10px] text-gray-500">Halts all trading if account drops this %</span>
+            </div>
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Default Stop-Loss (%)</label>
+              <input type="number" id="cfg-sl" step="0.1" min="0.5" max="20.0" value="2.0"
+                class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white" />
+            </div>
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Default Take-Profit Target (%)</label>
+              <input type="number" id="cfg-tp" step="0.1" min="1.0" max="50.0" value="4.0"
+                class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white" />
+              <span class="text-[10px] text-gray-500">Ensures at least 1:2 Risk/Reward</span>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-darkBg border border-borderLine flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-white block">Require Manual Confirmation for Autonomous Trades</span>
+              <span class="text-[11px] text-gray-400">When enabled, the agent prepares the trade ticket and requests 1-click confirmation before sending to the exchange.</span>
+            </div>
+            <input type="checkbox" id="cfg-confirm" class="w-4 h-4 rounded bg-cardBg text-cyan-500 focus:ring-0" />
+          </div>
+        </div>
+
+        <!-- TAB 2: TRADING WEBSITE / BROKER API -->
+        <div id="set-tab-exchange" class="settings-panel space-y-4 hidden">
+          <div class="text-xs text-gray-300">
+            Connect your real trading account on any major platform via secure API keys.
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Trading Website / Exchange</label>
+              <select id="cfg-exchange-id" class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white">
+                <option value="binance">Binance (binance.com)</option>
+                <option value="bybit">Bybit (bybit.com)</option>
+                <option value="kraken">Kraken (kraken.com)</option>
+                <option value="kucoin">KuCoin (kucoin.com)</option>
+                <option value="alpaca">Alpaca Markets (US Stocks / Crypto)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Execution Mode</label>
+              <select id="cfg-testnet" class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white">
+                <option value="true">Testnet / Sandbox (Zero Risk Practice)</option>
+                <option value="false">Live Real-Money Trading Site</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">API Key</label>
+              <input type="text" id="cfg-api-key" placeholder="Enter exchange API key"
+                class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white font-mono" />
+            </div>
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">API Secret</label>
+              <input type="password" id="cfg-api-secret" placeholder="Enter exchange API secret (masked)"
+                class="w-full bg-darkBg border border-borderLine rounded-lg px-3 py-2 text-white font-mono" />
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3 pt-2">
+            <button type="button" onclick="testExchangeConnection()"
+              class="px-4 py-2 rounded-xl bg-cardHover border border-cyan-500/40 text-cyan-300 font-semibold text-xs hover:bg-cyan-500/20 transition flex items-center space-x-1.5">
+              <i data-lucide="plug" class="w-3.5 h-3.5"></i>
+              <span>Test Exchange Connection</span>
+            </button>
+            <span id="test-conn-result" class="text-xs font-mono text-gray-400"></span>
+          </div>
+        </div>
+
+        <!-- TAB 3: TRADED ASSETS & MARKETS -->
+        <div id="set-tab-assets" class="settings-panel space-y-4 hidden">
+          <div class="text-xs text-gray-300">
+            Select with what assets the agent analyzes and trades (Bitcoin, Gold, Stocks, etc.):
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-darkBg border border-borderLine cursor-pointer hover:border-cyan-500/50">
+              <input type="checkbox" name="cfg_asset" value="BTC-USD" checked class="w-4 h-4 rounded text-cyan-500" />
+              <span>🪙 Bitcoin (BTC)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-darkBg border border-borderLine cursor-pointer hover:border-cyan-500/50">
+              <input type="checkbox" name="cfg_asset" value="GC=F" checked class="w-4 h-4 rounded text-cyan-500" />
+              <span>🏅 Gold (XAU/USD)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-darkBg border border-borderLine cursor-pointer hover:border-cyan-500/50">
+              <input type="checkbox" name="cfg_asset" value="ETH-USD" checked class="w-4 h-4 rounded text-cyan-500" />
+              <span>🔷 Ethereum (ETH)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-darkBg border border-borderLine cursor-pointer hover:border-cyan-500/50">
+              <input type="checkbox" name="cfg_asset" value="SOL-USD" checked class="w-4 h-4 rounded text-cyan-500" />
+              <span>🟣 Solana (SOL)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-darkBg border border-borderLine cursor-pointer hover:border-cyan-500/50">
+              <input type="checkbox" name="cfg_asset" value="NVDA" checked class="w-4 h-4 rounded text-cyan-500" />
+              <span>🟩 Nvidia (NVDA)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-darkBg border border-borderLine cursor-pointer hover:border-cyan-500/50">
+              <input type="checkbox" name="cfg_asset" value="AAPL" checked class="w-4 h-4 rounded text-cyan-500" />
+              <span>🍎 Apple (AAPL)</span>
             </label>
           </div>
         </div>
 
-        <div>
-          <label class="block text-gray-400 mb-1">Exchange API Key</label>
-          <input type="text" id="modal-api-key" placeholder="Enter API Key from your trading site" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white font-mono">
+        <!-- TAB 4: APP THEME -->
+        <div id="set-tab-theme" class="settings-panel space-y-4 hidden">
+          <span class="text-xs text-gray-300 block">Choose the visual style of your trading desk:</span>
+
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <button type="button" onclick="applyTheme('cyberpunk')"
+              class="p-4 rounded-xl border border-cyan-500/50 bg-[#07090e] text-left hover:scale-[1.02] transition shadow-lg">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-cyan-400">Cyberpunk Obsidian</span>
+                <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+              </div>
+              <span class="text-[10px] text-gray-400">Deep obsidian dark with electric cyan & emerald neon accents.</span>
+            </button>
+
+            <button type="button" onclick="applyTheme('midnight')"
+              class="p-4 rounded-xl border border-blue-500/50 bg-[#0a0f1d] text-left hover:scale-[1.02] transition shadow-lg">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-blue-400">Midnight Navy</span>
+                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+              </div>
+              <span class="text-[10px] text-gray-400">Sleek midnight blue palette inspired by Wall Street terminals.</span>
+            </button>
+
+            <button type="button" onclick="applyTheme('emerald')"
+              class="p-4 rounded-xl border border-emerald-500/50 bg-[#040d0a] text-left hover:scale-[1.02] transition shadow-lg">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-emerald-400">Emerald Matrix</span>
+                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+              </div>
+              <span class="text-[10px] text-gray-400">Deep black matrix with vivid emerald bull-market glow.</span>
+            </button>
+
+            <button type="button" onclick="applyTheme('light')"
+              class="p-4 rounded-xl border border-gray-300 bg-white text-left hover:scale-[1.02] transition shadow-lg">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-slate-800">Clean Slate Light</span>
+                <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+              </div>
+              <span class="text-[10px] text-gray-500">Crisp high-contrast day mode for bright workspace environments.</span>
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label class="block text-gray-400 mb-1">Exchange API Secret</label>
-          <input type="password" id="modal-api-secret" placeholder="Enter API Secret" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white font-mono">
+        <!-- TAB 5: PERSONAL PROFILE & ACCOUNT -->
+        <div id="set-tab-profile" class="settings-panel space-y-4 hidden">
+          <div class="p-4 rounded-xl bg-darkBg border border-borderLine space-y-3 text-xs">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-600 flex items-center justify-center text-lg font-bold text-black" id="prof-avatar">
+                ?
+              </div>
+              <div>
+                <span class="text-sm font-bold text-white block" id="prof-name">Guest Trader</span>
+                <span class="text-gray-400 text-xs font-mono" id="prof-email">Not signed in</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 mt-1 inline-block" id="prof-level">Intermediate</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <button type="button" onclick="openAuthModal()" class="px-4 py-2 rounded-xl bg-cyan-500 text-black font-bold text-xs hover:bg-cyan-400 transition">
+              Switch or Create Account
+            </button>
+            <button type="button" onclick="handleLogout()" class="px-4 py-2 rounded-xl bg-cardHover border border-borderLine text-gray-400 hover:text-white text-xs transition">
+              Sign Out
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label class="block text-gray-400 mb-1">Watchlist Symbols (Comma Separated)</label>
-          <input type="text" id="modal-watchlist" value="BTC-USD, ETH-USD, SOL-USD, AAPL, NVDA" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white font-mono">
+        <!-- TAB 6: RELEASE VERSION & DATE OF THE .EXE -->
+        <div id="set-tab-release" class="settings-panel space-y-4 hidden">
+          <div class="p-4 rounded-xl bg-darkBg border border-borderLine space-y-3 text-xs font-mono">
+            <div class="flex items-center justify-between pb-2 border-b border-borderLine">
+              <span class="text-gray-400">Release Version:</span>
+              <span class="font-bold text-cyan-400" id="rel-version">v2.5.0-LTS Stable Release</span>
+            </div>
+            <div class="flex items-center justify-between pb-2 border-b border-borderLine">
+              <span class="text-gray-400">Release Date:</span>
+              <span class="font-bold text-white" id="rel-date">September 16, 2026</span>
+            </div>
+            <div class="flex items-center justify-between pb-2 border-b border-borderLine">
+              <span class="text-gray-400">Binary Target:</span>
+              <span class="text-gray-200">Windows x64 Standalone Executable (TradingAgent.exe)</span>
+            </div>
+            <div class="flex items-center justify-between pb-2 border-b border-borderLine">
+              <span class="text-gray-400">Author & Branding:</span>
+              <span class="text-gray-200">MinoForge-Official</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-gray-400">AI Engine:</span>
+              <span class="text-emerald-400 font-bold">Google Gemini 3.6 Flash (Connected)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Settings Footer -->
+      <div class="px-6 py-4 border-t border-borderLine flex items-center justify-between bg-darkBg">
+        <span id="save-status-msg" class="text-xs text-emerald-400 font-medium"></span>
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-cardHover text-gray-300 hover:text-white text-xs transition">
+            Close
+          </button>
+          <button type="button" onclick="saveAllSettings()" class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition shadow-lg">
+            Save All Changes
+          </button>
         </div>
       </div>
 
-      <div class="flex items-center justify-end space-x-3 pt-3 border-t border-borderLine">
-        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded text-xs text-gray-400 hover:text-white">Cancel</button>
-        <button onclick="saveModalSettings()" class="px-4 py-2 rounded text-xs font-bold bg-brand hover:bg-blue-600 text-white">Save & Connect</button>
-      </div>
     </div>
   </div>
 
-  <!-- SCRIPT LOGIC -->
-  <script>
-    let chart, candleSeries;
-    let currentSymbol = "BTC-USD";
-    let autoTradingActive = false;
-    let currentTab = "positions";
 
-    // Initialize chart
+  <!-- ========================================================================= -->
+  <!-- FRONTEND APPLICATION JAVASCRIPT LOGIC                                     -->
+  <!-- ========================================================================= -->
+  <script>
+    // State
+    let currentMode = "copilot"; // 'autonomous' or 'copilot'
+    let currentAsset = "BTC-USD";
+    let currentUser = null;
+    let chartInstance = null;
+    let candleSeries = null;
+    let chatHistory = [];
+
+    // Initialize on load
+    document.addEventListener("DOMContentLoaded", async () => {
+      lucide.createIcons();
+      initChart();
+      await loadInitialState();
+      await loadChartData(currentAsset);
+      setInterval(pollUpdates, 4000);
+    });
+
+    // --- CHART INITIALIZATION ---
     function initChart() {
-      const container = document.getElementById('tv-chart');
-      chart = LightweightCharts.createChart(container, {
+      const container = document.getElementById("chart-container");
+      chartInstance = LightweightCharts.createChart(container, {
         layout: {
-          background: { color: '#131722' },
-          textColor: '#787b86',
+          background: { color: "transparent" },
+          textColor: "#94a3b8",
         },
         grid: {
-          vertLines: { color: '#1e222d' },
-          horzLines: { color: '#1e222d' },
+          vertLines: { color: "rgba(35, 45, 66, 0.4)" },
+          horzLines: { color: "rgba(35, 45, 66, 0.4)" },
         },
-        crosshair: {
-          mode: LightweightCharts.CrosshairMode.Normal,
-        },
-        rightPriceScale: {
-          borderColor: '#2a2e39',
-        },
-        timeScale: {
-          borderColor: '#2a2e39',
-          timeVisible: true,
-        },
+        timeScale: { borderColor: "#232d42", timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       });
 
-      candleSeries = chart.addCandlestickSeries({
-        upColor: '#089981',
-        downColor: '#f23645',
-        borderDownColor: '#f23645',
-        borderUpColor: '#089981',
-        wickDownColor: '#f23645',
-        wickUpColor: '#089981',
+      candleSeries = chartInstance.addCandlestickSeries({
+        upColor: "#10b981",
+        downColor: "#ef4444",
+        borderVisible: false,
+        wickUpColor: "#10b981",
+        wickDownColor: "#ef4444",
       });
 
-      window.addEventListener('resize', () => {
-        chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+      window.addEventListener("resize", () => {
+        chartInstance.applyOptions({ width: container.clientWidth, height: container.clientHeight });
       });
-      chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
     }
 
-    // Load Chart data
-    async function loadChartData(symbol) {
-      currentSymbol = symbol;
-      document.getElementById('active-symbol').innerText = symbol;
-      document.getElementById('ticket-ticker').innerText = symbol;
-
+    async function loadChartData(sym) {
       try {
-        const res = await fetch(`/api/chart-data/${encodeURIComponent(symbol)}`);
+        const res = await fetch(`/api/chart-data/${encodeURIComponent(sym)}`);
         const data = await res.json();
         if (data.candles && data.candles.length > 0) {
           candleSeries.setData(data.candles);
-          chart.timeScale().fitContent();
-
-          const lastCandle = data.candles[data.candles.length - 1];
-          const priceStr = `$${lastCandle.close.toFixed(2)}`;
-          document.getElementById('active-price').innerText = priceStr;
-          document.getElementById('ticket-price').innerText = priceStr;
-        }
-
-        if (data.signal) {
-          updateSignalUI(data.signal);
+          const last = data.candles[data.candles.length - 1];
+          document.getElementById("chart-live-price").innerText = `$${last.close.toLocaleString()}`;
         }
       } catch (e) {
-        console.error("Failed to load chart data:", e);
+        console.warn("Chart data fetch error:", e);
       }
     }
 
-    function updateSignalUI(sig) {
-      const badge = document.getElementById('signal-badge');
-      badge.innerText = sig.action;
-      if (sig.action === "BUY") {
-        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-bull text-white";
-      } else if (sig.action === "SELL") {
-        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-bear text-white";
+    function selectAsset(sym) {
+      currentAsset = sym;
+      document.querySelectorAll(".asset-tab").forEach(tab => {
+        if (tab.dataset.sym === sym) {
+          tab.className = "asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-cyan-400 border border-cyan-500/40";
+        } else {
+          tab.className = "asset-tab px-2.5 py-1 rounded font-bold bg-cardHover text-gray-400 hover:text-white";
+        }
+      });
+      loadChartData(sym);
+    }
+
+    // --- STATE LOADING ---
+    async function loadInitialState() {
+      try {
+        // 1. Fetch current settings and release info
+        const setRes = await fetch("/api/settings");
+        const settings = await setRes.json();
+        
+        // Populate Release Info
+        if (settings.release) {
+          document.getElementById("nav-release-tag").innerText = settings.release.version;
+          document.getElementById("rel-version").innerText = `${settings.release.version} Stable Release`;
+          document.getElementById("rel-date").innerText = settings.release.release_date;
+        }
+
+        // Apply theme
+        if (settings.theme) {
+          applyTheme(settings.theme, false);
+        }
+
+        // Set safety barrier values
+        if (settings.safety_barriers) {
+          document.getElementById("cfg-risk").value = settings.safety_barriers.max_risk_per_trade_pct;
+          document.getElementById("cfg-drawdown").value = settings.safety_barriers.max_drawdown_pct;
+          document.getElementById("cfg-sl").value = settings.safety_barriers.stop_loss_pct;
+          document.getElementById("cfg-tp").value = settings.safety_barriers.take_profit_pct;
+          document.getElementById("side-risk-val").innerText = `${settings.safety_barriers.max_risk_per_trade_pct}%`;
+          document.getElementById("side-drawdown-val").innerText = `${settings.safety_barriers.max_drawdown_pct}%`;
+          document.getElementById("side-sl-val").innerText = `${settings.safety_barriers.stop_loss_pct}%`;
+          document.getElementById("side-tp-val").innerText = `${settings.safety_barriers.take_profit_pct}%`;
+          document.getElementById("banner-risk-limit").innerText = `${settings.safety_barriers.max_risk_per_trade_pct}%`;
+        }
+
+        // 2. Fetch current active user
+        const authRes = await fetch("/api/auth/me");
+        const authData = await authRes.json();
+        if (authData.authenticated && authData.user) {
+          setUserSession(authData.user);
+        } else {
+          // Open auth modal for registration if brand new
+          openAuthModal();
+        }
+
+        // 3. Set mode
+        setTradingMode(settings.trading_mode || "copilot", false);
+
+      } catch (err) {
+        console.error("Failed to load initial state:", err);
+      }
+    }
+
+    // --- MODE TOGGLING ---
+    async function setTradingMode(mode, postToServer = true) {
+      currentMode = mode;
+      const autoBtn = document.getElementById("mode-btn-autonomous");
+      const copiBtn = document.getElementById("mode-btn-copilot");
+      const banner = document.getElementById("mode-banner");
+      const bannerText = document.getElementById("mode-banner-text");
+
+      if (mode === "autonomous") {
+        autoBtn.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-150 bg-amber-400 text-black font-semibold shadow";
+        copiBtn.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-150 text-gray-400 hover:text-white";
+        banner.className = "px-4 py-2 border-b border-borderLine bg-amber-950/30 flex items-center justify-between text-xs";
+        bannerText.innerHTML = "⚡ <strong>Full Autonomous Control:</strong> Trading Agent Pro is authorized to execute REAL orders on your exchange within safety limits.";
       } else {
-        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-cardHover text-gray-300";
+        autoBtn.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-150 text-gray-400 hover:text-white";
+        copiBtn.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-150 bg-cyan-400 text-black font-semibold shadow";
+        banner.className = "px-4 py-2 border-b border-borderLine bg-cyan-950/30 flex items-center justify-between text-xs";
+        bannerText.innerHTML = "💡 <strong>Copilot Mode Active:</strong> Trading Agent Pro gives real-time tips, signals, and setups without automatic order submission.";
       }
 
-      document.getElementById('signal-reason').innerText = sig.reason || "Neutral trend.";
-      document.getElementById('sig-sl').innerText = sig.stop_loss ? `$${sig.stop_loss.toFixed(2)}` : "-";
-      document.getElementById('sig-tp').innerText = sig.take_profit ? `$${sig.take_profit.toFixed(2)}` : "-";
-      document.getElementById('sig-conf').innerText = `${Math.round(sig.confidence * 100)}%`;
-    }
-
-    // Fetch Status & Update Dashboard
-    async function refreshStatus() {
-      try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-
-        autoTradingActive = data.auto_trading;
-        const autoText = document.getElementById('auto-state-text');
-        const autoBtn = document.getElementById('btn-toggle-auto');
-        if (autoTradingActive) {
-          autoText.innerText = "ACTIVE";
-          autoText.className = "text-bull font-bold";
-          autoBtn.className = "text-xs font-semibold px-3 py-1.5 rounded bg-bull/20 text-bull border border-bull/40";
-        } else {
-          autoText.innerText = "OFF";
-          autoText.className = "text-gray-400";
-          autoBtn.className = "text-xs font-semibold px-3 py-1.5 rounded bg-cardHover border border-gray-700";
+      if (postToServer) {
+        try {
+          await fetch("/api/mode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: mode }),
+          });
+        } catch (e) {
+          console.error("Failed to update mode:", e);
         }
-
-        const dot = document.getElementById('status-dot');
-        const stText = document.getElementById('status-text');
-        if (data.exchange.connected) {
-          dot.className = "w-2.5 h-2.5 rounded-full bg-bull animate-pulse";
-          stText.innerText = `Live: ${data.exchange.exchange.toUpperCase()}`;
-        } else {
-          dot.className = "w-2.5 h-2.5 rounded-full bg-yellow-500";
-          stText.innerText = `Mode: ${data.mode.toUpperCase()}`;
-        }
-
-        // Metrics
-        document.getElementById('val-equity').innerText = `$${data.portfolio.total_equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('val-cash').innerText = `$${data.portfolio.cash.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        const retEl = document.getElementById('val-return');
-        retEl.innerText = `${data.portfolio.return_pct >= 0 ? '+' : ''}${data.portfolio.return_pct.toFixed(2)}%`;
-        retEl.className = data.portfolio.return_pct >= 0 ? 'text-bull font-mono font-semibold' : 'text-bear font-mono font-semibold';
-        document.getElementById('val-drawdown').innerText = `${data.portfolio.drawdown_pct.toFixed(2)}%`;
-        document.getElementById('count-pos').innerText = data.portfolio.positions_count;
-
-        renderWatchlist(data.watchlist);
-      } catch (e) {
-        console.error("Status check failed:", e);
       }
     }
 
-    function renderWatchlist(list) {
-      const c = document.getElementById('watchlist-container');
-      c.innerHTML = list.map(sym => `
-        <div onclick="loadChartData('${sym}')" class="p-2 rounded cursor-pointer transition flex items-center justify-between text-xs ${sym === currentSymbol ? 'bg-cardHover border-l-2 border-brand text-white font-bold' : 'hover:bg-cardHover/60 text-gray-300'}">
-          <span>${sym}</span>
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
+    // --- AI CHAT SYSTEM ---
+    async function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("chat-input");
+      const text = input.value.trim();
+      if (!text) return;
 
-    // Run Scan
-    async function runScan() {
-      const btn = document.getElementById('btn-scan');
-      btn.innerHTML = `<span class="animate-spin">⏳</span> Scanning...`;
-      btn.disabled = true;
+      appendChatMessage("user", text);
+      input.value = "";
+
+      // Show typing indicator
+      const typingId = appendTypingIndicator();
 
       try {
-        const res = await fetch('/api/scan', { method: 'POST' });
-        const data = await res.json();
-        await refreshStatus();
-        await loadChartData(currentSymbol);
-        await refreshBottomTabs();
-      } catch (e) {
-        alert("Scan failed: " + e);
-      } finally {
-        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3 h-3"></i><span>Scan Now</span>`;
-        btn.disabled = false;
-        lucide.createIcons();
-      }
-    }
-
-    // Manual Trade Execution
-    async function executeOrder(side) {
-      const confirmed = confirm(`Submit ${side.toUpperCase()} order on ${currentSymbol}?`);
-      if (!confirmed) return;
-
-      try {
-        const res = await fetch('/api/order/manual', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            symbol: currentSymbol,
-            side: side,
-            amount: 1.0,
-            order_type: 'market'
-          })
+            message: text,
+            history: chatHistory,
+            asset: currentAsset,
+          }),
         });
         const data = await res.json();
-        alert(`Order ${side.toUpperCase()} processed!`);
-        await refreshStatus();
-        await refreshBottomTabs();
-      } catch (e) {
-        alert("Order failed: " + e);
+        removeTypingIndicator(typingId);
+
+        appendChatMessage("ai", data.reply, data.trade_setup);
+        chatHistory.push({ sender: "user", text: text });
+        chatHistory.push({ sender: "ai", text: data.reply });
+      } catch (err) {
+        removeTypingIndicator(typingId);
+        appendChatMessage("ai", "⚠️ Connection interruption. Please verify your network.");
       }
     }
 
-    // Bottom Tab switcher
-    function switchBottomTab(tab) {
-      currentTab = tab;
-      ['positions', 'trades', 'webhook', 'logs'].forEach(t => {
-        const btn = document.getElementById(`tab-btn-${t}`);
-        if (t === tab) {
-          btn.className = "text-white border-b-2 border-brand pb-1 font-bold";
-        } else {
-          btn.className = "text-gray-400 hover:text-white pb-1 font-normal";
-        }
-      });
-      refreshBottomTabs();
+    function sendQuickPrompt(promptText) {
+      document.getElementById("chat-input").value = promptText;
+      document.getElementById("chat-form").dispatchEvent(new Event("submit"));
     }
 
-    async function refreshBottomTabs() {
-      const container = document.getElementById('bottom-content');
-      const res = await fetch('/api/portfolio');
-      const data = await res.json();
+    function handleTextareaKeydown(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById("chat-form").dispatchEvent(new Event("submit"));
+      }
+    }
 
-      if (currentTab === 'positions') {
-        if (!data.positions || data.positions.length === 0) {
-          container.innerHTML = `<div class="text-xs text-gray-500 p-4 text-center">No active open positions on this account.</div>`;
+    function appendChatMessage(sender, text, tradeSetup = null) {
+      const feed = document.getElementById("chat-feed");
+      const msgDiv = document.createElement("div");
+
+      if (sender === "user") {
+        msgDiv.className = "flex items-start justify-end space-x-2";
+        msgDiv.innerHTML = `
+          <div class="bg-cyan-500 text-black font-medium rounded-2xl rounded-tr-none px-4 py-2.5 max-w-xl text-sm shadow">
+            ${escapeHtml(text)}
+          </div>
+        `;
+      } else {
+        msgDiv.className = "flex items-start space-x-3 max-w-3xl";
+        const parsedHtml = marked.parse(text);
+        let setupHtml = "";
+
+        if (tradeSetup) {
+          const isBuy = tradeSetup.action === "BUY";
+          setupHtml = `
+            <div class="mt-3 p-3.5 rounded-xl border ${isBuy ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-red-500/50 bg-red-950/20'} space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs ${isBuy ? 'text-emerald-400' : 'text-red-400'} flex items-center space-x-1">
+                  <span>⚡ AI RECOMMENDED TRADE: ${tradeSetup.action} ${tradeSetup.symbol}</span>
+                </span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-darkBg text-cyan-300 font-mono">Confidence: ${tradeSetup.confidence}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+                <div><span class="text-gray-400 block text-[10px]">Entry:</span>$${tradeSetup.entry}</div>
+                <div><span class="text-red-400 block text-[10px]">Stop Loss:</span>$${tradeSetup.stop_loss}</div>
+                <div><span class="text-emerald-400 block text-[10px]">Take Profit:</span>$${tradeSetup.take_profit}</div>
+              </div>
+              <button onclick="executeAiTrade('${tradeSetup.action}', '${tradeSetup.symbol}', ${tradeSetup.entry}, ${tradeSetup.stop_loss}, ${tradeSetup.take_profit})"
+                class="w-full mt-2 py-1.5 rounded-lg ${isBuy ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400'} text-black font-bold text-xs transition">
+                Execute on Exchange (${tradeSetup.action})
+              </button>
+            </div>
+          `;
+        }
+
+        msgDiv.innerHTML = `
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0 font-bold text-sm">
+            🤖
+          </div>
+          <div class="flex-1 bg-cardBg border border-borderLine rounded-2xl rounded-tl-none p-4 shadow-sm prose-chat text-sm">
+            ${parsedHtml}
+            ${setupHtml}
+          </div>
+        `;
+      }
+
+      feed.appendChild(msgDiv);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function appendTypingIndicator() {
+      const feed = document.getElementById("chat-feed");
+      const id = "typing-" + Date.now();
+      const div = document.createElement("div");
+      div.id = id;
+      div.className = "flex items-center space-x-2 text-xs text-cyan-400 italic py-1";
+      div.innerHTML = `<span>Trading Agent Pro is analyzing market data...</span>`;
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+      return id;
+    }
+
+    function removeTypingIndicator(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    // --- AUTHENTICATION & PASSWORD STRENGTH ---
+    function handleUserBtnClick() {
+      if (currentUser) {
+        openSettingsModal();
+        switchSettingsTab("profile");
+      } else {
+        openAuthModal();
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById("auth-modal").classList.remove("hidden");
+    }
+
+    function closeAuthModal() {
+      document.getElementById("auth-modal").classList.add("hidden");
+    }
+
+    function switchAuthTab(tab) {
+      const regTab = document.getElementById("tab-register");
+      const logTab = document.getElementById("tab-login");
+      const formReg = document.getElementById("form-register");
+      const formLog = document.getElementById("form-login");
+      const title = document.getElementById("auth-modal-title");
+
+      if (tab === "register") {
+        regTab.className = "flex-1 py-1.5 rounded-lg bg-cyan-500 text-black font-bold transition";
+        logTab.className = "flex-1 py-1.5 rounded-lg text-gray-400 hover:text-white transition";
+        formReg.classList.remove("hidden");
+        formLog.classList.add("hidden");
+        title.innerText = "Create an Account";
+      } else {
+        logTab.className = "flex-1 py-1.5 rounded-lg bg-cyan-500 text-black font-bold transition";
+        regTab.className = "flex-1 py-1.5 rounded-lg text-gray-400 hover:text-white transition";
+        formLog.classList.remove("hidden");
+        formReg.classList.add("hidden");
+        title.innerText = "Sign In to Trading Agent Pro";
+      }
+      hideAuthAlert();
+    }
+
+    function showAuthAlert(msg, isError = true) {
+      const alert = document.getElementById("auth-alert");
+      alert.classList.remove("hidden");
+      alert.className = isError
+        ? "p-3 rounded-xl text-xs font-medium border bg-red-500/10 border-red-500/30 text-red-300"
+        : "p-3 rounded-xl text-xs font-medium border bg-emerald-500/10 border-emerald-500/30 text-emerald-300";
+      alert.innerText = msg;
+    }
+
+    function hideAuthAlert() {
+      document.getElementById("auth-alert").classList.add("hidden");
+    }
+
+    async function handlePasswordInput(pwd) {
+      const bar = document.getElementById("strength-bar");
+      const label = document.getElementById("strength-label");
+      const cLen = document.getElementById("crit-len");
+      const cUpper = document.getElementById("crit-upper");
+      const cNum = document.getElementById("crit-num");
+      const cSym = document.getElementById("crit-sym");
+
+      if (!pwd) {
+        bar.style.width = "0%";
+        label.innerText = "Empty";
+        label.className = "font-bold text-gray-500";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/auth/strength", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pwd }),
+        });
+        const d = await res.json();
+        bar.style.width = `${d.score}%`;
+
+        if (d.level === "weak") {
+          bar.className = "h-full bg-red-500 transition-all duration-300";
+          label.className = "font-bold text-red-400";
+        } else if (d.level === "medium") {
+          bar.className = "h-full bg-amber-500 transition-all duration-300";
+          label.className = "font-bold text-amber-400";
+        } else if (d.level === "strong") {
+          bar.className = "h-full bg-emerald-500 transition-all duration-300";
+          label.className = "font-bold text-emerald-400";
+        } else {
+          bar.className = "h-full bg-cyan-400 glow-brand transition-all duration-300";
+          label.className = "font-bold text-cyan-400";
+        }
+        label.innerText = d.label;
+
+        // Update criteria tags
+        cLen.className = d.checks.length_min ? "px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold" : "px-1.5 py-0.5 rounded bg-gray-800 text-gray-500";
+        cUpper.className = d.checks.uppercase ? "px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold" : "px-1.5 py-0.5 rounded bg-gray-800 text-gray-500";
+        cNum.className = d.checks.digit ? "px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold" : "px-1.5 py-0.5 rounded bg-gray-800 text-gray-500";
+        cSym.className = d.checks.special ? "px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold" : "px-1.5 py-0.5 rounded bg-gray-800 text-gray-500";
+
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    async function handleRegisterSubmit(e) {
+      e.preventDefault();
+      hideAuthAlert();
+
+      const name = document.getElementById("reg-name").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const password = document.getElementById("reg-password").value;
+      const exp = document.getElementById("reg-exp").value;
+      const site = document.getElementById("reg-site").value;
+
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            password: password,
+            experience_level: exp,
+            trading_website: site,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showAuthAlert(data.detail || "Registration failed.");
           return;
         }
-        container.innerHTML = `
-          <table class="w-full text-xs text-left text-gray-300">
-            <thead class="text-gray-500 uppercase border-b border-borderLine text-[10px]">
-              <tr><th class="p-1.5">Symbol</th><th>Qty</th><th>Entry</th><th>Current</th><th>Value</th><th>PnL</th><th>SL</th><th>TP</th></tr>
-            </thead>
-            <tbody>
-              ${data.positions.map(p => `
-                <tr class="border-b border-borderLine/50 hover:bg-cardHover/40">
-                  <td class="p-1.5 font-bold text-white">${p.symbol}</td>
-                  <td>${p.quantity.toFixed(4)}</td>
-                  <td>$${p.entry_price.toFixed(2)}</td>
-                  <td>$${p.current_price.toFixed(2)}</td>
-                  <td>$${p.market_value.toFixed(2)}</td>
-                  <td class="${p.unrealized_pnl >= 0 ? 'text-bull' : 'text-bear'} font-semibold">$${p.unrealized_pnl.toFixed(2)} (${p.unrealized_pnl_pct.toFixed(2)}%)</td>
-                  <td>${p.stop_loss ? '$' + p.stop_loss.toFixed(2) : '-'}</td>
-                  <td>${p.take_profit ? '$' + p.take_profit.toFixed(2) : '-'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-      } else if (currentTab === 'trades') {
-        container.innerHTML = `
-          <table class="w-full text-xs text-left text-gray-300">
-            <thead class="text-gray-500 uppercase border-b border-borderLine text-[10px]">
-              <tr><th class="p-1.5">Date</th><th>Symbol</th><th>Qty</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Reason</th></tr>
-            </thead>
-            <tbody>
-              ${data.closed_trades.map(t => `
-                <tr class="border-b border-borderLine/50">
-                  <td class="p-1.5 text-gray-500">${t.timestamp.slice(0, 16).replace('T', ' ')}</td>
-                  <td class="font-bold text-white">${t.symbol}</td>
-                  <td>${t.quantity}</td>
-                  <td>$${t.entry_price}</td>
-                  <td>$${t.exit_price}</td>
-                  <td class="${t.pnl >= 0 ? 'text-bull' : 'text-bear'} font-semibold">$${t.pnl} (${t.pnl_pct}%)</td>
-                  <td class="text-gray-400">${t.reason || 'Closed'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-      } else if (currentTab === 'webhook') {
-        container.innerHTML = `
-          <div class="p-3 text-xs space-y-2">
-            <div class="font-bold text-white">📡 TradingView Alert Webhook Endpoint:</div>
-            <div class="bg-darkBg p-2 rounded font-mono text-brand border border-borderLine select-all">
-              http://localhost:8000/api/webhook/trade
-            </div>
-            <div class="text-gray-400">In TradingView Alert settings, paste the URL above and use this Message JSON template:</div>
-            <pre class="bg-darkBg p-2 rounded text-[11px] text-gray-300 font-mono">{"action": "BUY", "ticker": "BTC/USDT", "price": {{close}}}</pre>
-          </div>
-        `;
-      } else if (currentTab === 'logs') {
-        container.innerHTML = `
-          <div class="font-mono text-[11px] space-y-1 p-1">
-            ${data.logs.map(l => `
-              <div class="flex space-x-2">
-                <span class="text-gray-600">[${l.time}]</span>
-                <span class="${l.level === 'SUCCESS' ? 'text-bull' : (l.level === 'ERROR' ? 'text-bear' : 'text-gray-400')} font-semibold">${l.level}:</span>
-                <span class="text-gray-300">${l.message}</span>
-              </div>
-            `).join('')}
-          </div>
-        `;
+
+        setUserSession(data.user);
+        closeAuthModal();
+        appendChatMessage("ai", `Account created successfully for **${data.user.email}**! Your initial safety barriers and preferences have been loaded.`);
+      } catch (err) {
+        showAuthAlert("Registration error. Please check server.");
       }
     }
 
-    async function toggleAutoTrading() {
-      const nextState = !autoTradingActive;
-      if (nextState) {
-        const ok = confirm("Enable autonomous auto-trading? The bot will execute live/paper orders automatically.");
-        if (!ok) return;
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      hideAuthAlert();
+
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, password: password }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showAuthAlert(data.detail || "Login failed.");
+          return;
+        }
+
+        setUserSession(data.user);
+        closeAuthModal();
+        appendChatMessage("ai", `Welcome back, **${data.user.name}**! Desk ready in **${data.user.trading_mode.toUpperCase()}** mode.`);
+      } catch (err) {
+        showAuthAlert("Sign in error. Please check server.");
       }
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          auto_trading_enabled: nextState,
-          watchlist: ["BTC-USD", "ETH-USD", "SOL-USD", "AAPL", "NVDA"]
-        })
+    }
+
+    function setUserSession(user) {
+      currentUser = user;
+      document.getElementById("nav-user-name").innerText = user.name.split(" ")[0];
+      document.getElementById("nav-user-avatar").innerText = user.name.charAt(0).toUpperCase();
+      document.getElementById("prof-name").innerText = user.name;
+      document.getElementById("prof-email").innerText = user.email;
+      document.getElementById("prof-avatar").innerText = user.name.charAt(0).toUpperCase();
+      document.getElementById("prof-level").innerText = user.experience_level;
+      document.getElementById("nav-exchange-badge").innerText = user.trading_website.toUpperCase();
+
+      if (user.trading_mode) {
+        setTradingMode(user.trading_mode, false);
+      }
+      if (user.theme) {
+        applyTheme(user.theme, false);
+      }
+    }
+
+    async function handleLogout() {
+      await fetch("/api/auth/logout", { method: "POST" });
+      currentUser = null;
+      document.getElementById("nav-user-name").innerText = "Sign In";
+      document.getElementById("nav-user-avatar").innerText = "?";
+      closeSettingsModal();
+      openAuthModal();
+    }
+
+    // --- THEME ENGINE ---
+    function applyTheme(themeName, save = true) {
+      document.documentElement.setAttribute("data-theme", themeName);
+      if (save) {
+        fetch("/api/settings/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ theme: themeName }),
+        });
+      }
+    }
+
+    function cycleTheme() {
+      const themes = ["cyberpunk", "midnight", "emerald", "light"];
+      const curr = document.documentElement.getAttribute("data-theme") || "cyberpunk";
+      const next = themes[(themes.indexOf(curr) + 1) % themes.length];
+      applyTheme(next);
+    }
+
+    // --- SETTINGS MODAL ---
+    function openSettingsModal() {
+      document.getElementById("settings-modal").classList.remove("hidden");
+    }
+
+    function closeSettingsModal() {
+      document.getElementById("settings-modal").classList.add("hidden");
+    }
+
+    function switchSettingsTab(tabName) {
+      document.querySelectorAll(".settings-panel").forEach(p => p.classList.add("hidden"));
+      document.querySelectorAll(".set-tab").forEach(t => {
+        t.className = "set-tab py-3 px-3 border-b-2 border-transparent text-gray-400 hover:text-white transition";
       });
-      await refreshStatus();
+
+      const activeTabBtn = document.querySelector(`.set-tab[data-target='set-tab-${tabName}']`);
+      if (activeTabBtn) {
+        activeTabBtn.className = "set-tab py-3 px-3 border-b-2 border-cyan-400 text-cyan-400 transition";
+      }
+      const panel = document.getElementById(`set-tab-${tabName}`);
+      if (panel) panel.classList.remove("hidden");
     }
 
-    async function emergencyHalt() {
-      await fetch('/api/emergency/halt', { method: 'POST' });
-      alert("EMERGENCY KILLSWITCH: All auto-trading has been halted immediately.");
-      await refreshStatus();
-    }
+    async function saveAllSettings() {
+      const risk = parseFloat(document.getElementById("cfg-risk").value);
+      const drawdown = parseFloat(document.getElementById("cfg-drawdown").value);
+      const sl = parseFloat(document.getElementById("cfg-sl").value);
+      const tp = parseFloat(document.getElementById("cfg-tp").value);
+      const confirm = document.getElementById("cfg-confirm").checked;
 
-    // Modal helpers
-    function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
-    function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+      const exchangeId = document.getElementById("cfg-exchange-id").value;
+      const testnet = document.getElementById("cfg-testnet").value === "true";
+      const apiKey = document.getElementById("cfg-api-key").value.trim();
+      const apiSecret = document.getElementById("cfg-api-secret").value.trim();
 
-    async function saveModalSettings() {
-      const mode = document.getElementById('modal-mode').value;
-      const ex = document.getElementById('modal-exchange').value;
-      const testnet = document.getElementById('modal-testnet').checked;
-      const apiKey = document.getElementById('modal-api-key').value.trim();
-      const apiSecret = document.getElementById('modal-api-secret').value.trim();
-      const wl = document.getElementById('modal-watchlist').value.split(',').map(s => s.trim()).filter(s => s);
+      const checkedAssets = Array.from(document.querySelectorAll("input[name='cfg_asset']:checked")).map(cb => cb.value);
 
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          auto_trading_enabled: autoTradingActive,
-          trading_mode: mode,
-          exchange_id: ex,
+      const payload = {
+        trading_website: exchangeId,
+        traded_assets: checkedAssets,
+        safety_barriers: {
+          max_risk_per_trade_pct: risk,
+          stop_loss_pct: sl,
+          take_profit_pct: tp,
+          max_drawdown_pct: drawdown,
+          max_open_positions: 3,
+          require_manual_confirmation: confirm,
+        },
+        exchange_credentials: {
+          exchange_id: exchangeId,
+          testnet: testnet,
           api_key: apiKey || null,
           api_secret: apiSecret || null,
-          testnet: testnet,
-          watchlist: wl
-        })
-      });
+        }
+      };
 
-      closeSettingsModal();
-      alert("Settings saved and exchange reconnected!");
-      await refreshStatus();
+      try {
+        const res = await fetch("/api/settings/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const d = await res.json();
+        
+        // Update UI displays
+        document.getElementById("side-risk-val").innerText = `${risk}%`;
+        document.getElementById("side-drawdown-val").innerText = `${drawdown}%`;
+        document.getElementById("side-sl-val").innerText = `${sl}%`;
+        document.getElementById("side-tp-val").innerText = `${tp}%`;
+        document.getElementById("banner-risk-limit").innerText = `${risk}%`;
+
+        document.getElementById("save-status-msg").innerText = "✓ Settings saved successfully!";
+        setTimeout(() => { document.getElementById("save-status-msg").innerText = ""; }, 3000);
+      } catch (e) {
+        document.getElementById("save-status-msg").innerText = "⚠️ Failed to save settings.";
+      }
     }
 
-    // Boot
-    window.addEventListener('DOMContentLoaded', async () => {
-      initChart();
-      await refreshStatus();
-      await loadChartData("BTC-USD");
-      await refreshBottomTabs();
-      setInterval(refreshStatus, 10000);
-    });
+    async function testExchangeConnection() {
+      const exchangeId = document.getElementById("cfg-exchange-id").value;
+      const testnet = document.getElementById("cfg-testnet").value === "true";
+      const apiKey = document.getElementById("cfg-api-key").value.trim();
+      const apiSecret = document.getElementById("cfg-api-secret").value.trim();
+      const resEl = document.getElementById("test-conn-result");
+
+      resEl.innerText = "Pinging exchange...";
+      try {
+        const res = await fetch("/api/exchange/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            exchange_id: exchangeId,
+            testnet: testnet,
+            api_key: apiKey,
+            api_secret: apiSecret,
+          }),
+        });
+        const data = await res.json();
+        if (data.connected) {
+          resEl.className = "text-xs font-mono text-emerald-400 font-bold";
+          resEl.innerText = `✓ Connected! Real Balance: ${JSON.stringify(data.balances || {})}`;
+        } else {
+          resEl.className = "text-xs font-mono text-amber-400";
+          resEl.innerText = `Demo Mode: ${data.message || data.error}`;
+        }
+      } catch (e) {
+        resEl.className = "text-xs font-mono text-red-400";
+        resEl.innerText = "Connection failed.";
+      }
+    }
+
+    // --- TRADE EXECUTION ---
+    async function executeQuickTrade(side) {
+      const amt = parseFloat(document.getElementById("quick-trade-amount").value);
+      const sym = document.getElementById("quick-trade-asset").value;
+      if (!amt || amt <= 0) {
+        alert("Please enter a valid trade amount.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/order/manual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbol: sym,
+            side: side,
+            amount: amt,
+          }),
+        });
+        const data = await res.json();
+        appendChatMessage("ai", `Trade Ticket Sent: **${side.toUpperCase()} ${amt} ${sym}**.`);
+      } catch (e) {
+        alert("Order execution error.");
+      }
+    }
+
+    async function executeAiTrade(action, symbol, entry, sl, tp) {
+      if (!confirm(`Confirm execution of ${action} on ${symbol}?\nEntry: $${entry}\nStop-Loss: $${sl}\nTake-Profit: $${tp}`)) {
+        return;
+      }
+      try {
+        const res = await fetch("/api/order/manual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbol: symbol,
+            side: action.toLowerCase(),
+            amount: 0.05,
+            price: entry,
+            stop_loss: sl,
+            take_profit: tp,
+          }),
+        });
+        appendChatMessage("ai", `⚡ **AI Trade Executed**: ${action} ${symbol} @ $${entry} with Stop-Loss at $${sl}.`);
+      } catch (e) {
+        alert("Execution failed.");
+      }
+    }
+
+    async function triggerEmergencyHalt() {
+      if (!confirm("⚠️ TRIGGER EMERGENCY PANIC HALT?\nThis will stop all automated trading immediately.")) {
+        return;
+      }
+      try {
+        await fetch("/api/emergency/halt", { method: "POST" });
+        setTradingMode("copilot", false);
+        appendChatMessage("ai", "🔴 **EMERGENCY KILLSWITCH TRIGGERED**: All automated trading is permanently halted until you re-enable it.");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // --- LOGS POLLING ---
+    async function pollUpdates() {
+      try {
+        const res = await fetch("/api/portfolio");
+        const data = await res.json();
+        if (data.logs) {
+          const logBox = document.getElementById("system-logs-box");
+          logBox.innerHTML = data.logs.slice(-15).map(l => `
+            <div><span class="text-gray-500">[${l.time}]</span> <span class="${l.level === 'SUCCESS' ? 'text-emerald-400' : l.level === 'ERROR' ? 'text-red-400' : 'text-gray-300'}">${escapeHtml(l.message)}</span></div>
+          `).join("");
+        }
+      } catch (e) {}
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
   </script>
+
 </body>
 </html>
