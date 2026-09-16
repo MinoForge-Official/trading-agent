@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trading-agent"
+version = "0.1.0"
+description = "A modular algorithmic trading agent with backtesting, paper trading, and GitHub Actions automation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Custom Non-Commercial" }
+authors = [
+    { name = "MinoForge-Official" }
+]
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "yfinance>=0.2.36",
+    "ccxt>=4.2.0",
+    "pydantic>=2.5.0",
+    "rich>=13.7.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]
+
+[project.scripts]
+trading-agent = "trading_agent.cli.main:main"
+github-trade-tool = "trading_agent.github_tool.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["trading_agent"]
