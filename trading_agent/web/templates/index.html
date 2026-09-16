@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Agent Pro | Live Trading Site Automation</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- TradingView Lightweight Charts -->
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: '#2962ff',
+            bull: '#089981',
+            bear: '#f23645',
+            darkBg: '#131722',
+            cardBg: '#1e222d',
+            cardHover: '#2a2e39',
+            borderLine: '#2a2e39',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #131722; color: #d1d4dc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #131722; }
+    ::-webkit-scrollbar-thumb { background: #2a2e39; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #363c4e; }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden select-none">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="h-14 bg-cardBg border-b border-borderLine px-4 flex items-center justify-between shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2">
+        <span class="text-xl">🤖</span>
+        <span class="font-bold text-lg text-white tracking-wide">TRADING AGENT <span class="text-brand text-xs font-semibold px-2 py-0.5 rounded bg-brand/20 ml-1">PRO</span></span>
+      </div>
+      <span class="text-xs text-gray-500">|</span>
+      <span class="text-xs text-gray-400">Live Trading Site Automation Platform</span>
+    </div>
+
+    <!-- Center Mode & Killswitch -->
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center bg-darkBg px-3 py-1 rounded-full border border-borderLine space-x-2">
+        <span class="w-2.5 h-2.5 rounded-full" id="status-dot"></span>
+        <span class="text-xs font-medium" id="status-text">Connecting...</span>
+      </div>
+
+      <button id="btn-toggle-auto" onclick="toggleAutoTrading()" class="text-xs font-semibold px-3 py-1.5 rounded bg-cardHover border border-gray-700 hover:border-gray-500 transition">
+        Auto-Trading: <span id="auto-state-text" class="text-gray-400">OFF</span>
+      </button>
+
+      <button onclick="emergencyHalt()" class="text-xs font-bold px-3 py-1.5 rounded bg-bear/20 text-bear border border-bear/40 hover:bg-bear hover:text-white transition flex items-center space-x-1">
+        <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+        <span>EMERGENCY HALT</span>
+      </button>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center space-x-3">
+      <button onclick="openSettingsModal()" class="flex items-center space-x-1.5 text-xs bg-cardHover px-3 py-1.5 rounded hover:bg-brand transition text-white">
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+        <span>Exchange Setup</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT SIDEBAR: WATCHLIST & SCANNER -->
+    <aside class="w-64 bg-cardBg border-r border-borderLine flex flex-col shrink-0">
+      <div class="p-3 border-b border-borderLine flex items-center justify-between">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Market Watchlist</span>
+        <button onclick="runScan()" id="btn-scan" class="text-xs bg-brand hover:bg-blue-600 text-white font-medium px-2.5 py-1 rounded flex items-center space-x-1 transition">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+          <span>Scan Now</span>
+        </button>
+      </div>
+
+      <!-- Watchlist items list -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-1" id="watchlist-container">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- 1-Click Trade Ticket -->
+      <div class="p-3 border-t border-borderLine bg-darkBg/60">
+        <div class="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
+          <span>Quick Execution</span>
+          <span class="text-[10px] text-gray-500" id="ticket-ticker">BTC-USD</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <button onclick="executeOrder('buy')" class="py-2 rounded font-bold text-xs bg-bull hover:bg-emerald-600 text-white transition flex items-center justify-center space-x-1">
+            <span>BUY</span>
+          </button>
+          <button onclick="executeOrder('sell')" class="py-2 rounded font-bold text-xs bg-bear hover:bg-rose-600 text-white transition flex items-center justify-center space-x-1">
+            <span>SELL</span>
+          </button>
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-gray-400">
+          <span>Risk Rule: 1.0%</span>
+          <span class="text-bull" id="ticket-price">$0.00</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: TRADINGVIEW CHART & RECOMMENDATION -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-darkBg">
+      <!-- Chart Controls Header -->
+      <div class="h-10 bg-cardBg/50 border-b border-borderLine px-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <span class="font-bold text-white text-sm tracking-wider" id="active-symbol">BTC-USD</span>
+          <span class="text-sm font-semibold text-bull" id="active-price">Loading...</span>
+        </div>
+        <div class="flex items-center space-x-2 text-xs text-gray-400">
+          <span>Strategy: <strong class="text-white" id="active-strategy">Composite</strong></span>
+          <span>•</span>
+          <span id="signal-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-cardHover text-gray-300">HOLD</span>
+        </div>
+      </div>
+
+      <!-- TradingView Lightweight Chart Container -->
+      <div class="flex-1 relative" id="chart-wrapper">
+        <div id="tv-chart" class="w-full h-full"></div>
+      </div>
+
+      <!-- Bottom Thesis Banner -->
+      <div class="h-14 bg-cardBg border-t border-borderLine px-4 flex items-center justify-between text-xs">
+        <div class="flex items-center space-x-2 flex-1 mr-4 overflow-hidden">
+          <i data-lucide="brain" class="w-4 h-4 text-brand shrink-0"></i>
+          <span class="text-gray-400 truncate" id="signal-reason">Scanning market data...</span>
+        </div>
+        <div class="flex items-center space-x-4 shrink-0 font-mono text-[11px]">
+          <div>SL: <span class="text-bear font-semibold" id="sig-sl">-</span></div>
+          <div>TP: <span class="text-bull font-semibold" id="sig-tp">-</span></div>
+          <div>Conf: <span class="text-white font-semibold" id="sig-conf">0%</span></div>
+        </div>
+      </div>
+
+      <!-- BOTTOM TABS: POSITIONS, ORDERS, WEBHOOKS, LOGS -->
+      <div class="h-44 bg-cardBg border-t border-borderLine flex flex-col shrink-0">
+        <div class="h-8 bg-cardHover border-b border-borderLine px-3 flex items-center space-x-4 text-xs font-semibold">
+          <button onclick="switchBottomTab('positions')" id="tab-btn-positions" class="text-white border-b-2 border-brand pb-1">Open Positions (<span id="count-pos">0</span>)</button>
+          <button onclick="switchBottomTab('trades')" id="tab-btn-trades" class="text-gray-400 hover:text-white pb-1">Executed Orders</button>
+          <button onclick="switchBottomTab('webhook')" id="tab-btn-webhook" class="text-gray-400 hover:text-white pb-1">TradingView Webhook Bridge</button>
+          <button onclick="switchBottomTab('logs')" id="tab-btn-logs" class="text-gray-400 hover:text-white pb-1">System Feed</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-2" id="bottom-content">
+          <!-- Table dynamically injected -->
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: LIVE EXCHANGE WALLET & RISK STATS -->
+    <aside class="w-72 bg-cardBg border-l border-borderLine flex flex-col shrink-0 p-3 space-y-3 overflow-y-auto">
+      <!-- Balance Card -->
+      <div class="bg-darkBg p-3 rounded-lg border border-borderLine">
+        <div class="text-[11px] text-gray-400 uppercase font-semibold">Live Wallet Balance</div>
+        <div class="text-2xl font-bold text-white mt-1" id="val-equity">$10,000.00</div>
+        <div class="flex items-center justify-between mt-2 text-xs">
+          <span class="text-gray-400">Free Cash:</span>
+          <span class="text-white font-mono" id="val-cash">$10,000.00</span>
+        </div>
+        <div class="flex items-center justify-between mt-1 text-xs">
+          <span class="text-gray-400">Return:</span>
+          <span class="text-bull font-mono font-semibold" id="val-return">+0.00%</span>
+        </div>
+      </div>
+
+      <!-- Risk Management Safety Status -->
+      <div class="bg-darkBg p-3 rounded-lg border border-borderLine space-y-2">
+        <div class="text-[11px] text-gray-400 uppercase font-semibold flex items-center justify-between">
+          <span>Safety Barriers</span>
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-bull"></i>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-400">Risk Per Trade:</span>
+          <span class="text-white font-mono">1.0% Equity</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-400">Max Asset Allocation:</span>
+          <span class="text-white font-mono">20.0%</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-400">Kill-Switch Limit:</span>
+          <span class="text-bear font-mono">15.0% Drawdown</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-400">Current Drawdown:</span>
+          <span class="text-gray-300 font-mono" id="val-drawdown">0.00%</span>
+        </div>
+      </div>
+
+      <!-- Exchange Integration Info -->
+      <div class="bg-darkBg p-3 rounded-lg border border-borderLine">
+        <div class="text-[11px] text-gray-400 uppercase font-semibold">Active Exchange Site</div>
+        <div class="flex items-center space-x-2 mt-2">
+          <span class="w-2 h-2 rounded-full bg-bull"></span>
+          <span class="text-sm font-semibold text-white uppercase" id="conn-exchange">Binance Testnet</span>
+        </div>
+        <p class="text-[11px] text-gray-500 mt-1">Ready for real or testnet trade execution.</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- SETTINGS / EXCHANGE SETUP MODAL -->
+  <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-cardBg border border-borderLine rounded-xl w-[520px] max-w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-borderLine pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="sliders" class="w-5 h-5 text-brand"></i>
+          <h3 class="font-bold text-white text-base">Exchange & Automation Setup</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-400 mb-1">Trading Execution Mode</label>
+          <select id="modal-mode" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white">
+            <option value="paper">Simulated Paper Trading (Virtual Account)</option>
+            <option value="live">Live Trading Site API Execution</option>
+            <option value="advisory">Advisory Only (Scan & Alerts)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-400 mb-1">Exchange Platform</label>
+            <select id="modal-exchange" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white">
+              <option value="binance">Binance</option>
+              <option value="bybit">Bybit</option>
+              <option value="kraken">Kraken</option>
+              <option value="kucoin">KuCoin</option>
+              <option value="alpaca">Alpaca (Stocks/Crypto)</option>
+            </select>
+          </div>
+          <div class="flex items-end pb-2">
+            <label class="flex items-center space-x-2 text-white cursor-pointer">
+              <input type="checkbox" id="modal-testnet" checked class="rounded bg-darkBg border-borderLine text-brand focus:ring-0">
+              <span>Use Testnet / Sandbox</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-gray-400 mb-1">Exchange API Key</label>
+          <input type="text" id="modal-api-key" placeholder="Enter API Key from your trading site" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white font-mono">
+        </div>
+
+        <div>
+          <label class="block text-gray-400 mb-1">Exchange API Secret</label>
+          <input type="password" id="modal-api-secret" placeholder="Enter API Secret" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white font-mono">
+        </div>
+
+        <div>
+          <label class="block text-gray-400 mb-1">Watchlist Symbols (Comma Separated)</label>
+          <input type="text" id="modal-watchlist" value="BTC-USD, ETH-USD, SOL-USD, AAPL, NVDA" class="w-full bg-darkBg border border-borderLine rounded px-3 py-2 text-white font-mono">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end space-x-3 pt-3 border-t border-borderLine">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded text-xs text-gray-400 hover:text-white">Cancel</button>
+        <button onclick="saveModalSettings()" class="px-4 py-2 rounded text-xs font-bold bg-brand hover:bg-blue-600 text-white">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    let chart, candleSeries;
+    let currentSymbol = "BTC-USD";
+    let autoTradingActive = false;
+    let currentTab = "positions";
+
+    // Initialize chart
+    function initChart() {
+      const container = document.getElementById('tv-chart');
+      chart = LightweightCharts.createChart(container, {
+        layout: {
+          background: { color: '#131722' },
+          textColor: '#787b86',
+        },
+        grid: {
+          vertLines: { color: '#1e222d' },
+          horzLines: { color: '#1e222d' },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+          borderColor: '#2a2e39',
+        },
+        timeScale: {
+          borderColor: '#2a2e39',
+          timeVisible: true,
+        },
+      });
+
+      candleSeries = chart.addCandlestickSeries({
+        upColor: '#089981',
+        downColor: '#f23645',
+        borderDownColor: '#f23645',
+        borderUpColor: '#089981',
+        wickDownColor: '#f23645',
+        wickUpColor: '#089981',
+      });
+
+      window.addEventListener('resize', () => {
+        chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+      });
+      chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+    }
+
+    // Load Chart data
+    async function loadChartData(symbol) {
+      currentSymbol = symbol;
+      document.getElementById('active-symbol').innerText = symbol;
+      document.getElementById('ticket-ticker').innerText = symbol;
+
+      try {
+        const res = await fetch(`/api/chart-data/${encodeURIComponent(symbol)}`);
+        const data = await res.json();
+        if (data.candles && data.candles.length > 0) {
+          candleSeries.setData(data.candles);
+          chart.timeScale().fitContent();
+
+          const lastCandle = data.candles[data.candles.length - 1];
+          const priceStr = `$${lastCandle.close.toFixed(2)}`;
+          document.getElementById('active-price').innerText = priceStr;
+          document.getElementById('ticket-price').innerText = priceStr;
+        }
+
+        if (data.signal) {
+          updateSignalUI(data.signal);
+        }
+      } catch (e) {
+        console.error("Failed to load chart data:", e);
+      }
+    }
+
+    function updateSignalUI(sig) {
+      const badge = document.getElementById('signal-badge');
+      badge.innerText = sig.action;
+      if (sig.action === "BUY") {
+        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-bull text-white";
+      } else if (sig.action === "SELL") {
+        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-bear text-white";
+      } else {
+        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-cardHover text-gray-300";
+      }
+
+      document.getElementById('signal-reason').innerText = sig.reason || "Neutral trend.";
+      document.getElementById('sig-sl').innerText = sig.stop_loss ? `$${sig.stop_loss.toFixed(2)}` : "-";
+      document.getElementById('sig-tp').innerText = sig.take_profit ? `$${sig.take_profit.toFixed(2)}` : "-";
+      document.getElementById('sig-conf').innerText = `${Math.round(sig.confidence * 100)}%`;
+    }
+
+    // Fetch Status & Update Dashboard
+    async function refreshStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        autoTradingActive = data.auto_trading;
+        const autoText = document.getElementById('auto-state-text');
+        const autoBtn = document.getElementById('btn-toggle-auto');
+        if (autoTradingActive) {
+          autoText.innerText = "ACTIVE";
+          autoText.className = "text-bull font-bold";
+          autoBtn.className = "text-xs font-semibold px-3 py-1.5 rounded bg-bull/20 text-bull border border-bull/40";
+        } else {
+          autoText.innerText = "OFF";
+          autoText.className = "text-gray-400";
+          autoBtn.className = "text-xs font-semibold px-3 py-1.5 rounded bg-cardHover border border-gray-700";
+        }
+
+        const dot = document.getElementById('status-dot');
+        const stText = document.getElementById('status-text');
+        if (data.exchange.connected) {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-bull animate-pulse";
+          stText.innerText = `Live: ${data.exchange.exchange.toUpperCase()}`;
+        } else {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-yellow-500";
+          stText.innerText = `Mode: ${data.mode.toUpperCase()}`;
+        }
+
+        // Metrics
+        document.getElementById('val-equity').innerText = `$${data.portfolio.total_equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        document.getElementById('val-cash').innerText = `$${data.portfolio.cash.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        const retEl = document.getElementById('val-return');
+        retEl.innerText = `${data.portfolio.return_pct >= 0 ? '+' : ''}${data.portfolio.return_pct.toFixed(2)}%`;
+        retEl.className = data.portfolio.return_pct >= 0 ? 'text-bull font-mono font-semibold' : 'text-bear font-mono font-semibold';
+        document.getElementById('val-drawdown').innerText = `${data.portfolio.drawdown_pct.toFixed(2)}%`;
+        document.getElementById('count-pos').innerText = data.portfolio.positions_count;
+
+        renderWatchlist(data.watchlist);
+      } catch (e) {
+        console.error("Status check failed:", e);
+      }
+    }
+
+    function renderWatchlist(list) {
+      const c = document.getElementById('watchlist-container');
+      c.innerHTML = list.map(sym => `
+        <div onclick="loadChartData('${sym}')" class="p-2 rounded cursor-pointer transition flex items-center justify-between text-xs ${sym === currentSymbol ? 'bg-cardHover border-l-2 border-brand text-white font-bold' : 'hover:bg-cardHover/60 text-gray-300'}">
+          <span>${sym}</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Run Scan
+    async function runScan() {
+      const btn = document.getElementById('btn-scan');
+      btn.innerHTML = `<span class="animate-spin">⏳</span> Scanning...`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/scan', { method: 'POST' });
+        const data = await res.json();
+        await refreshStatus();
+        await loadChartData(currentSymbol);
+        await refreshBottomTabs();
+      } catch (e) {
+        alert("Scan failed: " + e);
+      } finally {
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3 h-3"></i><span>Scan Now</span>`;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    }
+
+    // Manual Trade Execution
+    async function executeOrder(side) {
+      const confirmed = confirm(`Submit ${side.toUpperCase()} order on ${currentSymbol}?`);
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch('/api/order/manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: currentSymbol,
+            side: side,
+            amount: 1.0,
+            order_type: 'market'
+          })
+        });
+        const data = await res.json();
+        alert(`Order ${side.toUpperCase()} processed!`);
+        await refreshStatus();
+        await refreshBottomTabs();
+      } catch (e) {
+        alert("Order failed: " + e);
+      }
+    }
+
+    // Bottom Tab switcher
+    function switchBottomTab(tab) {
+      currentTab = tab;
+      ['positions', 'trades', 'webhook', 'logs'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tab) {
+          btn.className = "text-white border-b-2 border-brand pb-1 font-bold";
+        } else {
+          btn.className = "text-gray-400 hover:text-white pb-1 font-normal";
+        }
+      });
+      refreshBottomTabs();
+    }
+
+    async function refreshBottomTabs() {
+      const container = document.getElementById('bottom-content');
+      const res = await fetch('/api/portfolio');
+      const data = await res.json();
+
+      if (currentTab === 'positions') {
+        if (!data.positions || data.positions.length === 0) {
+          container.innerHTML = `<div class="text-xs text-gray-500 p-4 text-center">No active open positions on this account.</div>`;
+          return;
+        }
+        container.innerHTML = `
+          <table class="w-full text-xs text-left text-gray-300">
+            <thead class="text-gray-500 uppercase border-b border-borderLine text-[10px]">
+              <tr><th class="p-1.5">Symbol</th><th>Qty</th><th>Entry</th><th>Current</th><th>Value</th><th>PnL</th><th>SL</th><th>TP</th></tr>
+            </thead>
+            <tbody>
+              ${data.positions.map(p => `
+                <tr class="border-b border-borderLine/50 hover:bg-cardHover/40">
+                  <td class="p-1.5 font-bold text-white">${p.symbol}</td>
+                  <td>${p.quantity.toFixed(4)}</td>
+                  <td>$${p.entry_price.toFixed(2)}</td>
+                  <td>$${p.current_price.toFixed(2)}</td>
+                  <td>$${p.market_value.toFixed(2)}</td>
+                  <td class="${p.unrealized_pnl >= 0 ? 'text-bull' : 'text-bear'} font-semibold">$${p.unrealized_pnl.toFixed(2)} (${p.unrealized_pnl_pct.toFixed(2)}%)</td>
+                  <td>${p.stop_loss ? '$' + p.stop_loss.toFixed(2) : '-'}</td>
+                  <td>${p.take_profit ? '$' + p.take_profit.toFixed(2) : '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } else if (currentTab === 'trades') {
+        container.innerHTML = `
+          <table class="w-full text-xs text-left text-gray-300">
+            <thead class="text-gray-500 uppercase border-b border-borderLine text-[10px]">
+              <tr><th class="p-1.5">Date</th><th>Symbol</th><th>Qty</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Reason</th></tr>
+            </thead>
+            <tbody>
+              ${data.closed_trades.map(t => `
+                <tr class="border-b border-borderLine/50">
+                  <td class="p-1.5 text-gray-500">${t.timestamp.slice(0, 16).replace('T', ' ')}</td>
+                  <td class="font-bold text-white">${t.symbol}</td>
+                  <td>${t.quantity}</td>
+                  <td>$${t.entry_price}</td>
+                  <td>$${t.exit_price}</td>
+                  <td class="${t.pnl >= 0 ? 'text-bull' : 'text-bear'} font-semibold">$${t.pnl} (${t.pnl_pct}%)</td>
+                  <td class="text-gray-400">${t.reason || 'Closed'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } else if (currentTab === 'webhook') {
+        container.innerHTML = `
+          <div class="p-3 text-xs space-y-2">
+            <div class="font-bold text-white">📡 TradingView Alert Webhook Endpoint:</div>
+            <div class="bg-darkBg p-2 rounded font-mono text-brand border border-borderLine select-all">
+              http://localhost:8000/api/webhook/trade
+            </div>
+            <div class="text-gray-400">In TradingView Alert settings, paste the URL above and use this Message JSON template:</div>
+            <pre class="bg-darkBg p-2 rounded text-[11px] text-gray-300 font-mono">{"action": "BUY", "ticker": "BTC/USDT", "price": {{close}}}</pre>
+          </div>
+        `;
+      } else if (currentTab === 'logs') {
+        container.innerHTML = `
+          <div class="font-mono text-[11px] space-y-1 p-1">
+            ${data.logs.map(l => `
+              <div class="flex space-x-2">
+                <span class="text-gray-600">[${l.time}]</span>
+                <span class="${l.level === 'SUCCESS' ? 'text-bull' : (l.level === 'ERROR' ? 'text-bear' : 'text-gray-400')} font-semibold">${l.level}:</span>
+                <span class="text-gray-300">${l.message}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+
+    async function toggleAutoTrading() {
+      const nextState = !autoTradingActive;
+      if (nextState) {
+        const ok = confirm("Enable autonomous auto-trading? The bot will execute live/paper orders automatically.");
+        if (!ok) return;
+      }
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auto_trading_enabled: nextState,
+          watchlist: ["BTC-USD", "ETH-USD", "SOL-USD", "AAPL", "NVDA"]
+        })
+      });
+      await refreshStatus();
+    }
+
+    async function emergencyHalt() {
+      await fetch('/api/emergency/halt', { method: 'POST' });
+      alert("EMERGENCY KILLSWITCH: All auto-trading has been halted immediately.");
+      await refreshStatus();
+    }
+
+    // Modal helpers
+    function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
+    function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+    async function saveModalSettings() {
+      const mode = document.getElementById('modal-mode').value;
+      const ex = document.getElementById('modal-exchange').value;
+      const testnet = document.getElementById('modal-testnet').checked;
+      const apiKey = document.getElementById('modal-api-key').value.trim();
+      const apiSecret = document.getElementById('modal-api-secret').value.trim();
+      const wl = document.getElementById('modal-watchlist').value.split(',').map(s => s.trim()).filter(s => s);
+
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auto_trading_enabled: autoTradingActive,
+          trading_mode: mode,
+          exchange_id: ex,
+          api_key: apiKey || null,
+          api_secret: apiSecret || null,
+          testnet: testnet,
+          watchlist: wl
+        })
+      });
+
+      closeSettingsModal();
+      alert("Settings saved and exchange reconnected!");
+      await refreshStatus();
+    }
+
+    // Boot
+    window.addEventListener('DOMContentLoaded', async () => {
+      initChart();
+      await refreshStatus();
+      await loadChartData("BTC-USD");
+      await refreshBottomTabs();
+      setInterval(refreshStatus, 10000);
+    });
+  </script>
+</body>
+</html>
