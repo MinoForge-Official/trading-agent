@@ -1,4 +1,4 @@
-﻿"""Application settings and safety configuration management."""
+"""Application settings and safety configuration management."""
 
 from __future__ import annotations
 
@@ -77,6 +77,16 @@ class AppSettings(BaseModel):
         default=None,
         description="Optional Gemini API key for deep AI market thesis reasoning.",
     )
+    trading_mode: str = Field(
+        default="paper",
+        description="Trading execution mode: 'paper' or 'live'.",
+    )
+    trading_website: str = Field(
+        default="binance",
+        description="Connected exchange or broker platform.",
+    )
+
+    model_config = {"extra": "allow"}
 
 
 def get_default_config_path() -> Path:
